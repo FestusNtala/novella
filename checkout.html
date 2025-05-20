@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Novella</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/checkout.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="images/logo.png" alt="Novella Logo" width="150" height="80">
+        </div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="books.html">Books</a></li>
+                <li><a href="about.html">About Us</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="feedback.html">Feedback</a></li>
+            </ul>
+        </nav>
+        <div class="search-cart">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search books...">
+                <button id="searchBtn"><i class="fas fa-search"></i></button>
+            </div>
+            <div class="cart" id="cartIcon">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="cart-count">0</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="checkout-page">
+        <div class="checkout-header">
+            <h1>Complete Your Purchase</h1>
+            <p>Almost there! Just a few more steps to get your books</p>
+        </div>
+        
+        <div class="checkout-section">
+            <!-- Order Summary with Book Items -->
+            <div class="order-summary">
+                <h2><i class="fas fa-book-open"></i> Your Order</h2>
+                
+                <div class="order-items" id="orderItems">
+                    <!-- Dynamically populated from cart -->
+                    <div class="order-item">
+                        <img src="images/books/book1.png" alt="The Silent Patient">
+                        <div class="item-details">
+                            <div class="item-title">The Silent Patient</div>
+                            <div class="item-meta">
+                                <span>1 × $12.99</span>
+                                <span>$12.99</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="order-item">
+                        <img src="images/books/book2.png" alt="Educated">
+                        <div class="item-details">
+                            <div class="item-title">Educated</div>
+                            <div class="item-meta">
+                                <span>2 × $14.99</span>
+                                <span>$29.98</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="total-amount">
+                    <div class="total-label">Total Amount</div>
+                    <div class="total-price">$<span id="checkoutTotal">42.97</span></div>
+                </div>
+            </div>
+
+            <!-- Payment Section -->
+            <div class="payment-methods">
+                <h2><i class="fas fa-credit-card"></i> Payment Method</h2>
+                
+                <form id="checkoutForm" class="checkout-form">
+                    <div class="form-section">
+                        <h3>Shipping Information</h3>
+                        <div class="form-group">
+                            <input type="text" class="form-control" placeholder="Full Name" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="email" class="form-control" placeholder="Email" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" class="form-control" placeholder="Street Address" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" class="form-control" placeholder="City" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" class="form-control" placeholder="ZIP Code" required>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="payment-options">
+                    <button class="payment-method active" data-target="creditCardDetails">
+                        <i class="far fa-credit-card"></i>
+                        Credit Card
+                    </button>
+                    <button class="payment-method" data-target="paypalDetails">
+                        <i class="fab fa-paypal"></i>
+                        PayPal
+                    </button>
+                    <button class="payment-method" data-target="cashDetails">
+                        <i class="fas fa-money-bill-wave"></i>
+                        Cash
+                    </button>
+                </div>
+
+                <!-- Credit Card Section - Enhanced -->
+                <div class="payment-details" id="creditCardDetails">
+                    <div class="credit-card">
+                        <div class="card-header">
+                            <div class="card-type">VISA</div>
+                            <div class="card-chip">
+                                <i class="fas fa-microchip"></i>
+                            </div>
+                        </div>
+                        <div class="card-number">
+                            <span>••••</span>
+                            <span>••••</span>
+                            <span>••••</span>
+                            <span>1234</span>
+                        </div>
+                        <div class="card-footer">
+                            <div class="card-info">
+                                <span class="card-label">CARD HOLDER</span>
+                                <span class="card-value">JOHN DOE</span>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">EXPIRES</span>
+                                <span class="card-value">12/25</span>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">CVV</span>
+                                <span class="card-value">•••</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="creditCardForm">
+                        <div class="form-group">
+                            <label>Card Number</label>
+                            <input type="text" class="form-control" placeholder="1234 5678 9012 3456" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Cardholder Name</label>
+                            <input type="text" class="form-control" placeholder="John Doe" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Expiration Date</label>
+                                <input type="text" class="form-control" placeholder="MM/YY" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Security Code</label>
+                                <input type="text" class="form-control" placeholder="CVV" required>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                                
+                <div class="payment-details" id="paypalDetails" style="display: none;">
+                    <button class="paypal-button">
+                        <img src="images/paypal-logo.png" alt="PayPal" style="height: 18px;"> <!-- Reduced from 24px -->
+                    </button>
+                    <p style="text-align: center; margin-top: 1rem; color: #7f8c8d; font-size: 0.9rem;">
+                        You'll be redirected to PayPal to complete your purchase
+                    </p>
+                </div>
+
+                <div class="payment-details" id="cashDetails" style="display: none;">
+                    <div style="text-align: center; padding: 1rem;">
+                        <i class="fas fa-money-bill-wave" style="font-size: 3rem; color: #27ae60; margin-bottom: 1rem;"></i>
+                        <h3>Cash on Delivery</h3>
+                        <p>Pay when you receive your order</p>
+                        <p>Available in selected areas</p>
+                        <p style="margin-top: 1rem;"><strong>Delivery Fee:</strong> $2.99</p>
+                    </div>
+                </div>
+
+                <button class="confirm-payment">
+                    <i class="fas fa-lock"></i> Complete Purchase
+                </button>
+
+                <div class="security-badges">
+                    <div class="security-badge">
+                        <i class="fas fa-lock"></i>
+                        <span>Secure Checkout</span>
+                    </div>
+                    <div class="security-badge">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>SSL Encryption</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="books.html">Books</a></li>
+                    <li><a href="about.html">About Us</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                    <li><a href="feedback.html">Feedback</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Contact Us</h3>
+                <p><i class="fas fa-map-marker-alt"></i> 123 Book Street, Gaborone</p>
+                <p><i class="fas fa-phone"></i> +267 123 4567</p>
+                <p><i class="fas fa-envelope"></i> info@novella.com</p>
+            </div>
+            <div class="footer-section">
+                <h3>Follow Us</h3>
+                <div class="social-icons">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Novella. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+    <script>
+        // Enhanced Checkout Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load cart items from localStorage
+            const cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+            const orderItemsContainer = document.getElementById('orderItems');
+            const checkoutTotal = document.getElementById('checkoutTotal');
+            
+            // Render order items
+            function renderOrderItems() {
+                if (cartItems.length === 0) {
+                    orderItemsContainer.innerHTML = '<p class="empty-cart">Your cart is empty</p>';
+                    return;
+                }
+                
+                let total = 0;
+                orderItemsContainer.innerHTML = cartItems.map(item => `
+                    <div class="order-item">
+                        <img src="images/books/${item.image}" alt="${item.title}">
+                        <div class="item-details">
+                            <div class="item-title">${item.title}</div>
+                            <div class="item-meta">
+                                <span>${item.quantity} × $${item.price.toFixed(2)}</span>
+                                <span>$${(item.price * item.quantity).toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                // Calculate total
+                total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                checkoutTotal.textContent = total.toFixed(2);
+            }
+            
+            // Payment method switching
+            document.querySelectorAll('.payment-method').forEach(method => {
+                method.addEventListener('click', function() {
+                    document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('active'));
+                    this.classList.add('active');
+                    document.querySelectorAll('.payment-details').forEach(d => d.style.display = 'none');
+                    document.getElementById(this.dataset.target).style.display = 'block';
+                });
+            });
+            
+            // Form submission
+            document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Show processing animation
+                const btn = document.querySelector('.confirm-payment');
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                btn.disabled = true;
+                
+                // Simulate processing delay
+                setTimeout(() => {
+                    alert('Thank you for your purchase! Your order is being processed.');
+                    localStorage.removeItem('cartItems');
+                    window.location.href = 'index.html';
+                }, 2000);
+            });
+            
+            // Initialize
+            renderOrderItems();
+        });
+    </script>
+</body>
+</html>
