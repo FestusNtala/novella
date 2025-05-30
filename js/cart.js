@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const mobilePaymentInstructions = document.getElementById('mobilePaymentInstructions');
     
     // Cart state
-    let cart = JSON.parse(localStorage.getItem('bookhavenCart')) || [];
+    let cart = JSON.parse(localStorage.getItem('cartItems')) || [];
     
     // Initialize page
     renderCart();
@@ -130,14 +130,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    function removeFromCart(itemId) {
-        cart = cart.filter(item => item.id !== itemId);
+     // Remove item
+    function removeFromCart(bookId) {
+        cartItems = cartItems.filter(item => item.id !== bookId);
         saveCart();
-        renderCart();
-        updateCartSummary();
-        updateCartCount();
+        updateCartUI();
     }
-    
+                    
     function updateCartSummary() {
         const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
         const shipping = 5.00; // Flat rate shipping
@@ -165,8 +164,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function saveCart() {
-        localStorage.setItem('bookhavenCart', JSON.stringify(cart));
-    }
+        localStorage.setItem('cartItems', JSON.stringify(cartItems));
+        }
+
     
     function openCheckoutModal() {
         updateCheckoutOrderSummary();

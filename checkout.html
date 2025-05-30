@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/checkout.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  
 </head>
 <body>
     <header>
@@ -48,32 +47,11 @@
                 
                 <div class="order-items" id="orderItems">
                     <!-- Dynamically populated from cart -->
-                    <div class="order-item">
-                        <img src="images/books/book1.png" alt="The Silent Patient">
-                        <div class="item-details">
-                            <div class="item-title">The Silent Patient</div>
-                            <div class="item-meta">
-                                <span>1 × $12.99</span>
-                                <span>$12.99</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="order-item">
-                        <img src="images/books/book2.png" alt="Educated">
-                        <div class="item-details">
-                            <div class="item-title">Educated</div>
-                            <div class="item-meta">
-                                <span>2 × $14.99</span>
-                                <span>$29.98</span>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 
                 <div class="total-amount">
                     <div class="total-label">Total Amount</div>
-                    <div class="total-price">$<span id="checkoutTotal">42.97</span></div>
+                    <div class="total-price">$<span id="checkoutTotal">0.00</span></div>
                 </div>
             </div>
 
@@ -169,11 +147,10 @@
                         </div>
                     </form>
                 </div>
-
-                                
+                
                 <div class="payment-details" id="paypalDetails" style="display: none;">
                     <button class="paypal-button">
-                        <img src="images/paypal-logo.png" alt="PayPal" style="height: 18px;"> <!-- Reduced from 24px -->
+                        <img src="images/paypal-logo.png" alt="PayPal" style="height: 18px;">
                     </button>
                     <p style="text-align: center; margin-top: 1rem; color: #7f8c8d; font-size: 0.9rem;">
                         You'll be redirected to PayPal to complete your purchase
@@ -241,70 +218,7 @@
     </footer>
 
     <script src="js/script.js"></script>
-    <script>
-        // Enhanced Checkout Functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            // Load cart items from localStorage
-            const cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
-            const orderItemsContainer = document.getElementById('orderItems');
-            const checkoutTotal = document.getElementById('checkoutTotal');
-            
-            // Render order items
-            function renderOrderItems() {
-                if (cartItems.length === 0) {
-                    orderItemsContainer.innerHTML = '<p class="empty-cart">Your cart is empty</p>';
-                    return;
-                }
-                
-                let total = 0;
-                orderItemsContainer.innerHTML = cartItems.map(item => `
-                    <div class="order-item">
-                        <img src="images/books/${item.image}" alt="${item.title}">
-                        <div class="item-details">
-                            <div class="item-title">${item.title}</div>
-                            <div class="item-meta">
-                                <span>${item.quantity} × $${item.price.toFixed(2)}</span>
-                                <span>$${(item.price * item.quantity).toFixed(2)}</span>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
-                
-                // Calculate total
-                total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-                checkoutTotal.textContent = total.toFixed(2);
-            }
-            
-            // Payment method switching
-            document.querySelectorAll('.payment-method').forEach(method => {
-                method.addEventListener('click', function() {
-                    document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('active'));
-                    this.classList.add('active');
-                    document.querySelectorAll('.payment-details').forEach(d => d.style.display = 'none');
-                    document.getElementById(this.dataset.target).style.display = 'block';
-                });
-            });
-            
-            // Form submission
-            document.getElementById('checkoutForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Show processing animation
-                const btn = document.querySelector('.confirm-payment');
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-                btn.disabled = true;
-                
-                // Simulate processing delay
-                setTimeout(() => {
-                    alert('Thank you for your purchase! Your order is being processed.');
-                    localStorage.removeItem('cartItems');
-                    window.location.href = 'index.html';
-                }, 2000);
-            });
-            
-            // Initialize
-            renderOrderItems();
-        });
-    </script>
+    <script src="js/checkout.js"></script>
+    <script src="js/books.js"></script>
 </body>
 </html>

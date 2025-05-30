@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Team member data
     const teamMembers = [
         {
-            name: "Festus Larona Alex Ntala",
+            name: "Festus Ntala",
             position: "Founder & CEO",
             bio: "Book enthusiast with 15 years of publishing experience",
             image: "team/member1.jpg",

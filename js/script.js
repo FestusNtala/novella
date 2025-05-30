@@ -1,151 +1,328 @@
-// script.js
 document.addEventListener('DOMContentLoaded', function() {
-    // Cart functionality
-    let cartItems = [];
-    const cartCountElement = document.querySelector('.cart-count');
-    
-    // Initialize cart
-    function initializeCart() {
-        try {
-            const storedItems = localStorage.getItem('cartItems');
-            cartItems = storedItems ? JSON.parse(storedItems) : [];
-            updateCartCount();
-        } catch (e) {
-            console.error('Error loading cart:', e);
-            cartItems = [];
-        }
-    }
-
-    // Update cart count display
-    function updateCartCount() {
-        if (cartCountElement) {
-            const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-            cartCountElement.textContent = totalItems;
-            try {
-                localStorage.setItem('cartItems', JSON.stringify(cartItems));
-            } catch (e) {
-                console.error('Error saving cart:', e);
-            }
-        }
-    }
-
-    // Enhanced add to cart function
-    function addToCart(book) {
-        const existingItem = cartItems.find(item => item.id === book.id);
-        if (existingItem) {
-            existingItem.quantity++;
-        } else {
-            cartItems.push({...book, quantity: 1});
-        }
-        updateCartCount();
-        return true;
-    }
-
-    // Cart Modal functionality
+    const CART_STORAGE_KEY = 'novellaCartItems';
+    let cartItems = JSON.parse(localStorage.getItem(CART_STORAGE_KEY)) || [];
+    const cartCountElements = document.querySelectorAll('.cart-count');
     const cartModal = document.getElementById('cartModal');
-    const cartIcon = document.querySelector('.cart');
 
-    function openCart() {
-        cartModal.style.display = 'block';
-        renderCartItems();
-    }
+    // ======== 1. CART FUNCTIONS ========
 
-    function closeCart() {
-        cartModal.style.display = 'none';
+    function updateCartCount() {
+        const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+        cartCountElements.forEach(el => el.textContent = totalItems);
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
     }
 
     function renderCartItems() {
-        const cartItemsContainer = document.getElementById('cartItems');
-        const cartTotalElement = document.getElementById('cartTotal');
-        
-        cartItemsContainer.innerHTML = cartItems.length === 0 
-            ? '<p class="empty-cart">Your cart is empty</p>'
-            : cartItems.map((item, index) => `
-                <div class="cart-item" data-id="${item.id}">
-                    <div class="cart-item-info">
-                        <div class="cart-item-title">${item.title}</div>
-                        <div class="cart-item-price">
-                            $${item.price.toFixed(2)} × ${item.quantity}
-                        </div>
-                    </div>
-                    <button class="remove-item" data-index="${index}">&times;</button>
-                </div>
-            `).join('');
+        const cartContainer = document.querySelector('#cartModal .cart-items');
+        const cartTotalEl = document.getElementById('cartTotal');
 
-        const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        cartTotalElement.textContent = total.toFixed(2);
-        
-        document.querySelectorAll('.remove-item').forEach(btn => {
-            btn.addEventListener('click', function() {
-                cartItems.splice(parseInt(this.dataset.index), 1);
+        if (!cartContainer || !cartTotalEl) return;
+
+        cartContainer.innerHTML = '';
+
+        if (cartItems.length === 0) {
+            cartContainer.innerHTML = `
+                <div class="empty-cart-message">
+                    <i class="fas fa-shopping-cart"></i>
+                    <h3>Your cart is empty</h3>
+                    <p>Browse our collection to find your next favorite book</p>
+                    <a href="books.html" class="btn">Browse Books</a>
+                </div>
+            `;
+            cartTotalEl.textContent = '0.00';
+            return;
+        }
+
+        let total = 0;
+
+        cartItems.forEach(item => {
+            const itemTotal = item.price * item.quantity;
+            total += itemTotal;
+
+            const cartItem = document.createElement('div');
+            cartItem.classList.add('cart-item');
+            cartItem.innerHTML = `
+                <img src="images/books/${item.image}" alt="${item.title}">
+                <div class="item-details">
+                    <h4>${item.title}</h4>
+                    <p>${item.author}</p>
+                    <p>$${item.price.toFixed(2)}</p>
+                    <div class="quantity-controls">
+                        <button class="decrease" data-id="${item.id}">-</button>
+                        <span class="qty">${item.quantity}</span>
+                        <button class="increase" data-id="${item.id}">+</button>
+                        <button class="remove" data-id="${item.id}"><i class="fas fa-trash"></i></button>
+                    </div>
+                    <p><strong>Subtotal:</strong> $${itemTotal.toFixed(2)}</p>
+                </div>
+            `;
+            cartContainer.appendChild(cartItem);
+        });
+
+        cartTotalEl.textContent = total.toFixed(2);
+
+        // Quantity change and removal
+        cartContainer.querySelectorAll('.increase').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.id;
+                const item = cartItems.find(i => i.id === id);
+                if (item) item.quantity++;
                 updateCartCount();
                 renderCartItems();
             });
         });
-    }
 
-    // Checkout Page Enhancements
-    function setupCheckoutPage() {
-        const checkoutTotal = document.getElementById('checkoutTotal');
-        if (checkoutTotal) {
-            const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            checkoutTotal.textContent = total.toFixed(2);
-        }
+        cartContainer.querySelectorAll('.decrease').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.id;
+                const item = cartItems.find(i => i.id === id);
+                if (item && item.quantity > 1) {
+                    item.quantity--;
+                } else {
+                    cartItems = cartItems.filter(i => i.id !== id);
+                }
+                updateCartCount();
+                renderCartItems();
+            });
+        });
 
-        // Payment method toggle
-        document.querySelectorAll('.payment-method').forEach(method => {
-            method.addEventListener('click', function() {
-                document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('active'));
-                this.classList.add('active');
-                document.querySelectorAll('.payment-details').forEach(d => d.style.display = 'none');
-                document.getElementById(this.dataset.target).style.display = 'block';
+        cartContainer.querySelectorAll('.remove').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.id;
+                cartItems = cartItems.filter(i => i.id !== id);
+                updateCartCount();
+                renderCartItems();
+                showFeedback('Item removed', 'success');
             });
         });
     }
 
-        
-    // Generate random book particles (same as before)
-    document.addEventListener('DOMContentLoaded', function() {
-        const heroBg = document.querySelector('.hero-background');
-        const bookTitles = ['book1.png', 'book2.png', 'book3.png', 'book4.png', 'book5.png'];
-        
-        for (let i = 0; i < 15; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'book-particle';
-            
-            const size = Math.random() * 30 + 30;
-            const posX = Math.random() * 100;
-            const delay = Math.random() * 15;
-            const duration = Math.random() * 10 + 10;
-            const book = bookTitles[Math.floor(Math.random() * bookTitles.length)];
-            
-            particle.style.width = `${size}px`;
-            particle.style.height = `${size * 1.3}px`;
-            particle.style.left = `${posX}%`;
-            particle.style.animationDelay = `${delay}s`;
-            particle.style.animationDuration = `${duration}s`;
-            particle.style.backgroundImage = `url(images/books/${book})`;
-            
-            heroBg.appendChild(particle);
+    window.addToCart = function(book) {
+        const existingItem = cartItems.find(item => item.id === book.id);
+        if (existingItem) {
+            existingItem.quantity++;
+        } else {
+            cartItems.push({
+                id: book.id,
+                title: book.title,
+                price: book.price,
+                author: book.author,
+                image: book.image || 'default-book.png',
+                quantity: 1
+            });
         }
-    });
+        updateCartCount();
+        renderCartItems();
+        showFeedback('Added to cart!', 'success');
+    };
 
-    // Initialize all functionality
-    initializeCart();
-    setupCheckoutPage();
-    
-    // Event listeners
-    if (cartIcon) {
-        cartIcon.addEventListener('click', openCart);
+    // ======== 2. SEARCH FUNCTION ========
+
+    function setupSearch() {
+        const searchInput = document.querySelector('.hero-search input') || document.querySelector('.search-box input');
+        const searchButton = document.querySelector('.hero-search button') || document.querySelector('.search-box button');
+
+        if (searchInput && searchButton) {
+            const performSearch = () => {
+                const query = searchInput.value.trim();
+                if (query) {
+                    if (window.location.pathname.includes('books.html')) {
+                        filterBooks(query);
+                    } else {
+                        window.location.href = `books.html?search=${encodeURIComponent(query)}`;
+                    }
+                } else {
+                    showFeedback('Please enter a search term', 'error');
+                }
+            };
+
+            searchButton.addEventListener('click', performSearch);
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') performSearch();
+            });
+        }
     }
-    if (document.querySelector('.close-cart')) {
-        document.querySelector('.close-cart').addEventListener('click', closeCart);
+
+    function filterBooks(query) {
+        const bookCards = document.querySelectorAll('.book-card');
+        let foundResults = false;
+
+        bookCards.forEach(card => {
+            const title = card.querySelector('h3').textContent.toLowerCase();
+            const author = card.querySelector('p').textContent.toLowerCase();
+            const searchTerm = query.toLowerCase();
+
+            if (title.includes(searchTerm) || author.includes(searchTerm)) {
+                card.style.display = 'block';
+                foundResults = true;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        const noResultsMsg = document.getElementById('noResultsMessage') || createNoResultsMessage();
+
+        if (!foundResults) {
+            noResultsMsg.textContent = `No books found for "${query}". Please try another search.`;
+            noResultsMsg.style.display = 'block';
+        } else {
+            noResultsMsg.style.display = 'none';
+        }
     }
-    window.addEventListener('click', (e) => {
-        if (e.target === cartModal) closeCart();
-    });
 
-    console.log('Script loaded successfully');
+    function createNoResultsMessage() {
+        const msg = document.createElement('div');
+        msg.id = 'noResultsMessage';
+        msg.style.display = 'none';
+        msg.style.padding = '20px';
+        msg.style.textAlign = 'center';
+        msg.style.color = '#555';
+        document.querySelector('.book-grid').appendChild(msg);
+        return msg;
+    }
 
+    // ======== 3. FEEDBACK ========
 
+    function showFeedback(message, type) {
+        const feedback = document.createElement('div');
+        feedback.className = `feedback-message ${type}`;
+        feedback.textContent = message;
+        document.body.appendChild(feedback);
+
+        setTimeout(() => {
+            feedback.style.opacity = '0';
+            setTimeout(() => feedback.remove(), 500);
+        }, 3000);
+    }
+
+    // ======== 4. INIT =========
+
+    function initialize() {
+        updateCartCount();
+        setupSearch();
+        renderCartItems();
+
+        // Pre-fill search if applicable
+        if (window.location.pathname.includes('books.html')) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchQuery = urlParams.get('search');
+            if (searchQuery) {
+                document.querySelector('.search-box input').value = searchQuery;
+                filterBooks(searchQuery);
+            }
+        }
+
+        // Add-to-cart buttons
+        document.querySelectorAll('.book-card .add-to-cart').forEach(button => {
+            button.addEventListener('click', function () {
+                const bookCard = this.closest('.book-card');
+                const imgSrc = bookCard.querySelector('img').src;
+                addToCart({
+                    id: imgSrc.split('/').pop().split('.')[0],
+                    title: bookCard.querySelector('h3').textContent,
+                    price: parseFloat(bookCard.querySelector('.price').textContent.replace('$', '')),
+                    author: bookCard.querySelector('p').textContent,
+                    image: imgSrc.split('/').pop()
+                });
+            });
+        });
+
+        // Open cart modal
+        const cartIcon = document.querySelector('.cart');
+        if (cartIcon && cartModal) {
+            cartIcon.addEventListener('click', () => {
+                renderCartItems();
+                cartModal.style.display = 'block';
+            });
+        }
+
+        // Close cart modal
+        const closeCartBtn = document.querySelector('.close-cart');
+        if (closeCartBtn) {
+            closeCartBtn.addEventListener('click', () => {
+                cartModal.style.display = 'none';
+            });
+        }
+
+        window.addEventListener('click', (e) => {
+            if (e.target === cartModal) {
+                cartModal.style.display = 'none';
+            }
+        });
+    }
+
+    initialize();
 });
+
+// ======== 5. STYLES ========
+
+const style = document.createElement('style');
+style.textContent = `
+.feedback-message {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 5px;
+    z-index: 1000;
+    transition: opacity 0.5s;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    opacity: 1;
+}
+.feedback-message.success {
+    background-color: #4CAF50;
+    color: white;
+}
+.feedback-message.error {
+    background-color: #f44336;
+    color: white;
+}
+#noResultsMessage {
+    grid-column: 1 / -1;
+    font-size: 1.2rem;
+    margin-top: 20px;
+}
+.quantity-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 5px 0;
+}
+.quantity-controls button {
+    padding: 2px 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    background-color: #eee;
+    border: none;
+    border-radius: 4px;
+}
+.quantity-controls .remove {
+    background-color: #f44336;
+    color: white;
+}
+.quantity-controls .qty {
+    min-width: 20px;
+    text-align: center;
+}
+.cart-item {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 1rem;
+}
+.cart-item img {
+    width: 60px;
+    height: auto;
+    border-radius: 4px;
+}
+.item-details h4 {
+    margin: 0;
+    font-size: 1rem;
+}
+.item-details p {
+    margin: 0.2rem 0;
+    font-size: 0.85rem;
+}
+`;
+document.head.appendChild(style);
