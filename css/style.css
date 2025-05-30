@@ -914,3 +914,24 @@ nav ul li a.active::after {
     to { transform: scaleX(1); }
 }
 
+/* Active Navigation Link Styling */
+nav ul li a.active {
+    color: #4a6fa5;
+    position: relative;
+}
+
+nav ul li a.active::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #4a6fa5;
+    animation: underline 0.3s ease-out;
+}
+
+@keyframes underline {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+}
