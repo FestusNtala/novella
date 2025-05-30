@@ -1,293 +1,199 @@
+// cart.js
 document.addEventListener('DOMContentLoaded', function() {
-    // DOM Elements
-    const cartItemsContainer = document.getElementById('cartItems');
-    const cartCountElement = document.querySelector('.cart-count');
-    const subtotalElement = document.querySelector('.subtotal');
-    const shippingElement = document.querySelector('.shipping');
-    const taxElement = document.querySelector('.tax');
-    const totalElement = document.querySelector('.total-amount');
-    const checkoutBtn = document.getElementById('checkoutBtn');
-    const checkoutModal = document.getElementById('checkoutModal');
-    const closeModalBtn = document.querySelector('.checkout-modal .close-modal');
-    const cancelCheckoutBtn = document.getElementById('cancelCheckout');
-    const checkoutForm = document.getElementById('checkoutForm');
-    const confirmationModal = document.getElementById('confirmationModal');
-    const paymentMethods = document.querySelectorAll('input[name="paymentMethod"]');
-    const creditCardForm = document.getElementById('creditCardForm');
-    const paypalInstructions = document.getElementById('paypalInstructions');
-    const mobilePaymentInstructions = document.getElementById('mobilePaymentInstructions');
-    
-    // Cart state
-    let cart = JSON.parse(localStorage.getItem('cartItems')) || [];
-    
-    // Initialize page
-    renderCart();
-    updateCartSummary();
-    
-    // Event Listeners
-    checkoutBtn.addEventListener('click', openCheckoutModal);
-    closeModalBtn.addEventListener('click', closeCheckoutModal);
-    cancelCheckoutBtn.addEventListener('click', closeCheckoutModal);
-    checkoutForm.addEventListener('submit', processCheckout);
-    
-    // Payment method change
-    paymentMethods.forEach(method => {
-        method.addEventListener('change', function() {
-            updatePaymentMethodDisplay(this.value);
-        });
-    });
-    
-    // Close modals when clicking outside
-    window.addEventListener('click', function(e) {
-        if (e.target === checkoutModal) {
-            closeCheckoutModal();
-        }
-        if (e.target === confirmationModal) {
-            confirmationModal.style.display = 'none';
-        }
-    });
-    
-    // Functions
-    function renderCart() {
-        if (cart.length === 0) {
-            cartItemsContainer.innerHTML = `
-                <div class="empty-cart-message">
-                    <i class="fas fa-shopping-cart"></i>
-                    <h3>Your cart is empty</h3>
-                    <p>Browse our collection to find your next favorite book</p>
-                    <a href="books.html" class="btn">Browse Books</a>
-                </div>
-            `;
-            checkoutBtn.disabled = true;
-            return;
-        }
-        
-        cartItemsContainer.innerHTML = cart.map(item => `
-            <div class="cart-item" data-id="${item.id}">
-                <div class="cart-item-image">
-                    <img src="images/books/${item.image}" alt="${item.title}">
-                </div>
-                <div class="cart-item-details">
-                    <h3>${item.title}</h3>
-                    <p class="author">${item.author}</p>
-                    <p class="cart-item-price">$${item.price.toFixed(2)}</p>
-                    <div class="cart-item-quantity">
-                        <button class="decrease-qty"><i class="fas fa-minus"></i></button>
-                        <span>${item.quantity}</span>
-                        <button class="increase-qty"><i class="fas fa-plus"></i></button>
-                    </div>
-                    <button class="cart-item-remove">
-                        <i class="fas fa-trash-alt"></i> Remove
-                    </button>
-                </div>
-                <div class="cart-item-total">
-                    <p class="price">$${(item.price * item.quantity).toFixed(2)}</p>
-                </div>
-            </div>
-        `).join('');
-        
-        // Add event listeners to quantity buttons
-        document.querySelectorAll('.decrease-qty').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const itemId = parseInt(this.closest('.cart-item').dataset.id);
-                updateQuantity(itemId, -1);
-            });
-        });
-        
-        document.querySelectorAll('.increase-qty').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const itemId = parseInt(this.closest('.cart-item').dataset.id);
-                updateQuantity(itemId, 1);
-            });
-        });
-        
-        // Add event listeners to remove buttons
-        document.querySelectorAll('.cart-item-remove').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const itemId = parseInt(this.closest('.cart-item').dataset.id);
-                removeFromCart(itemId);
-            });
-        });
-        
-        checkoutBtn.disabled = false;
-    }
-    
-    function updateQuantity(itemId, change) {
-        const itemIndex = cart.findIndex(item => item.id === itemId);
-        
-        if (itemIndex !== -1) {
-            cart[itemIndex].quantity += change;
-            
-            // Remove item if quantity reaches 0
-            if (cart[itemIndex].quantity <= 0) {
-                cart.splice(itemIndex, 1);
-            }
-            
-            saveCart();
-            renderCart();
-            updateCartSummary();
-            updateCartCount();
-        }
-    }
-    
-     // Remove item
-    function removeFromCart(bookId) {
-        cartItems = cartItems.filter(item => item.id !== bookId);
-        saveCart();
-        updateCartUI();
-    }
-                    
-    function updateCartSummary() {
-        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const shipping = 5.00; // Flat rate shipping
-        const tax = subtotal * 0.07; // 7% tax rate
-        
-        subtotalElement.textContent = `$${subtotal.toFixed(2)}`;
-        shippingElement.textContent = `$${shipping.toFixed(2)}`;
-        taxElement.textContent = `$${tax.toFixed(2)}`;
-        totalElement.textContent = `$${(subtotal + shipping + tax).toFixed(2)}`;
-        
-        // Update checkout modal summary if open
-        if (checkoutModal.style.display === 'block') {
-            updateCheckoutOrderSummary();
-        }
-    }
-    
-    function updateCartCount() {
-        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-        cartCountElement.textContent = totalItems;
-        
-        // Update cart count in other pages if needed
-        if (typeof updateHeaderCartCount === 'function') {
-            updateHeaderCartCount(totalItems);
-        }
-    }
-    
-    function saveCart() {
-        localStorage.setItem('cartItems', JSON.stringify(cartItems));
-        }
+    // ===== CART STATE =====
+    const CART_STORAGE_KEY = 'novellaCartItems';
+    let cartItems = JSON.parse(localStorage.getItem(CART_STORAGE_KEY)) || [];
+    const cartCountElements = document.querySelectorAll('.cart-count');
+    const cartModal = document.getElementById('cartModal');
+    const closeCartBtn = document.querySelector('.close-cart');
+    const cartIcon = document.querySelector('.cart');
+    const cartItemsContainer = document.querySelector('#cartModal .cart-items');
+    const cartTotalElement = document.getElementById('cartTotal');
 
-    
-    function openCheckoutModal() {
-        updateCheckoutOrderSummary();
-        checkoutModal.style.display = 'block';
+    // ===== INITIALIZATION =====
+    initializeCart();
+
+    function initializeCart() {
+        updateCartCount(); // Load and display persisted count
+        setupCartClosing();
+        if (cartItemsContainer) renderCartItems();
+        
+        // Add centered styling to cart count elements
+        cartCountElements.forEach(el => {
+            el.style.display = 'flex';
+            el.style.justifyContent = 'center';
+            el.style.alignItems = 'center';
+        });
+    }
+
+    // ===== CART CLOSING FUNCTIONALITY =====
+    function setupCartClosing() {
+        if (!cartModal || !closeCartBtn || !cartIcon) return;
+
+        // Clean up existing listeners
+        closeCartBtn.removeEventListener('click', closeCartModal);
+        cartModal.removeEventListener('click', outsideClickHandler);
+        document.removeEventListener('keydown', escapeKeyHandler);
+        cartIcon.removeEventListener('click', openCartModal);
+
+        // Add fresh listeners
+        closeCartBtn.addEventListener('click', closeCartModal);
+        cartModal.addEventListener('click', outsideClickHandler);
+        document.addEventListener('keydown', escapeKeyHandler);
+        cartIcon.addEventListener('click', openCartModal);
+    }
+
+    function openCartModal(e) {
+        if (e) e.stopPropagation();
+        renderCartItems();
+        cartModal.style.display = 'block';
         document.body.style.overflow = 'hidden';
     }
-    
-    function closeCheckoutModal() {
-        checkoutModal.style.display = 'none';
+
+    function closeCartModal() {
+        cartModal.style.display = 'none';
         document.body.style.overflow = 'auto';
     }
-    
-    function updateCheckoutOrderSummary() {
-        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const shipping = 5.00;
-        const tax = subtotal * 0.07;
-        const total = subtotal + shipping + tax;
-        
-        const orderSummaryHTML = `
-            ${cart.map(item => `
-                <div class="checkout-item">
-                    <span class="title">${item.title}</span>
-                    <span class="quantity">${item.quantity}</span>
-                    <span class="price">$${(item.price * item.quantity).toFixed(2)}</span>
-                </div>
-            `).join('')}
-            <div class="checkout-total">
-                <span>Total</span>
-                <span>$${total.toFixed(2)}</span>
-            </div>
-        `;
-        
-        document.getElementById('checkoutOrderSummary').innerHTML = orderSummaryHTML;
+
+    function outsideClickHandler(e) {
+        if (e.target === cartModal) closeCartModal();
     }
-    
-    function updatePaymentMethodDisplay(method) {
-        creditCardForm.style.display = method === 'creditCard' ? 'block' : 'none';
-        paypalInstructions.style.display = method === 'paypal' ? 'block' : 'none';
-        mobilePaymentInstructions.style.display = method === 'mobilePayment' ? 'block' : 'none';
+
+    function escapeKeyHandler(e) {
+        if (e.key === 'Escape' && cartModal.style.display === 'block') {
+            closeCartModal();
+        }
     }
-    
-    function processCheckout(e) {
-        e.preventDefault();
-        
-        // In a real application, you would process payment here
-        // For this demo, we'll just show the confirmation
-        
-        // Generate random order ID
-        const orderId = 'BH' + Math.floor(100000 + Math.random() * 900000);
-        
-        // Get customer email from form
-        const customerEmail = document.getElementById('email').value || 'your@email.com';
-        
-        // Update confirmation modal
-        document.getElementById('orderId').textContent = orderId;
-        document.getElementById('customerEmail').textContent = customerEmail;
-        
-        // Close checkout modal and show confirmation
-        closeCheckoutModal();
-        confirmationModal.style.display = 'block';
-        
-        // Clear cart
-        cart = [];
+
+    // ===== CART FUNCTIONALITY =====
+    function updateCartCount() {
+        const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+        cartCountElements.forEach(el => {
+            el.textContent = totalItems;
+            el.style.display = totalItems > 0 ? 'flex' : 'none';
+            // Ensure centered styling
+            el.style.justifyContent = 'center';
+            el.style.alignItems = 'center';
+        });
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
+    }
+
+    function renderCartItems() {
+        if (!cartItemsContainer || !cartTotalElement) return;
+
+        cartItemsContainer.innerHTML = cartItems.length === 0 ? emptyCartHTML() : generateCartItemsHTML();
+        addCartItemEventListeners();
+    }
+
+    function emptyCartHTML() {
+        cartTotalElement.textContent = '0.00';
+        return `
+            <div class="empty-cart-message">
+                <i class="fas fa-shopping-cart"></i>
+                <h3>Your cart is empty</h3>
+                <p>Browse our collection to find your next favorite book</p>
+                <a href="books.html" class="btn">Browse Books</a>
+            </div>`;
+    }
+
+    function generateCartItemsHTML() {
+        let total = 0;
+        const itemsHTML = cartItems.map(item => {
+            const itemTotal = item.price * item.quantity;
+            total += itemTotal;
+            return `
+                <div class="cart-item" data-id="${item.id}">
+                    <img src="images/books/${item.image}" alt="${item.title}">
+                    <div class="item-details">
+                        <h4>${item.title}</h4>
+                        <p>${item.author}</p>
+                        <p>$${item.price.toFixed(2)}</p>
+                        <div class="quantity-controls">
+                            <button class="decrease" data-id="${item.id}">-</button>
+                            <span class="qty">${item.quantity}</span>
+                            <button class="increase" data-id="${item.id}">+</button>
+                            <button class="remove" data-id="${item.id}"><i class="fas fa-trash"></i></button>
+                        </div>
+                        <p><strong>Subtotal:</strong> $${itemTotal.toFixed(2)}</p>
+                    </div>
+                </div>`;
+        }).join('');
+
+        cartTotalElement.textContent = total.toFixed(2);
+        return itemsHTML;
+    }
+
+    function addCartItemEventListeners() {
+        document.querySelectorAll('.decrease').forEach(btn => {
+            btn.addEventListener('click', () => updateQuantity(btn.dataset.id, -1));
+        });
+        document.querySelectorAll('.increase').forEach(btn => {
+            btn.addEventListener('click', () => updateQuantity(btn.dataset.id, 1));
+        });
+        document.querySelectorAll('.remove').forEach(btn => {
+            btn.addEventListener('click', () => removeFromCart(btn.dataset.id));
+        });
+    }
+
+    function updateQuantity(id, change) {
+        const item = cartItems.find(i => i.id == id);
+        if (!item) return;
+
+        item.quantity += change;
+        if (item.quantity <= 0) {
+            cartItems = cartItems.filter(i => i.id != id);
+        }
+
+        updateCart();
+    }
+
+    function removeFromCart(id) {
+        cartItems = cartItems.filter(i => i.id != id);
+        updateCart();
+        showFeedback('Item removed', 'success');
+    }
+
+    function updateCart() {
         saveCart();
-        renderCart();
-        updateCartSummary();
         updateCartCount();
+        renderCartItems();
     }
-    
-    // Expose functions to global scope for other pages to use
+
+    function saveCart() {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
+    }
+
+    // ===== EXPOSED FUNCTIONS =====
     window.addToCart = function(book) {
-        const existingItem = cart.find(item => item.id === book.id);
-        
+        const existingItem = cartItems.find(item => item.id === book.id);
         if (existingItem) {
-            existingItem.quantity += 1;
+            existingItem.quantity++;
         } else {
-            cart.push({
+            cartItems.push({
                 id: book.id,
                 title: book.title,
-                author: book.author,
                 price: book.price,
-                image: book.image,
+                author: book.author,
+                image: book.image || 'default-book.png',
                 quantity: 1
             });
         }
-        
-        saveCart();
-        updateCartCount();
-        
-        // Show feedback
+        updateCart();
+        showFeedback('Added to cart!', 'success');
+    };
+
+    // ===== UTILITIES =====
+    function showFeedback(message, type) {
         const feedback = document.createElement('div');
-        feedback.textContent = 'Added to cart!';
-        feedback.style.position = 'fixed';
-        feedback.style.bottom = '20px';
-        feedback.style.right = '20px';
-        feedback.style.backgroundColor = '#4a6fa5';
-        feedback.style.color = 'white';
-        feedback.style.padding = '10px 20px';
-        feedback.style.borderRadius = '5px';
-        feedback.style.zIndex = '1000';
+        feedback.className = `feedback-message ${type}`;
+        feedback.textContent = message;
         document.body.appendChild(feedback);
-        
+
         setTimeout(() => {
             feedback.style.opacity = '0';
-            feedback.style.transition = 'opacity 0.5s';
             setTimeout(() => feedback.remove(), 500);
-        }, 2000);
-    };
-    
-    window.updateHeaderCartCount = function(count) {
-        cartCountElement.textContent = count;
-    };
-    
-    window.getCartCount = function() {
-        return cart.reduce((sum, item) => sum + item.quantity, 0);
-    };
+        }, 3000);
+    }
+
+    document.head.appendChild(style);
 });
-
-
-
-
-
-
-

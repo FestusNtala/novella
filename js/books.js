@@ -1,7 +1,12 @@
-// Books Page Functionality - Complete Solution
 document.addEventListener('DOMContentLoaded', function() {
+    // ======== 1. INITIALIZATION ========
+    const CART_STORAGE_KEY = 'novellaCartItems';
+    let cartItems = JSON.parse(localStorage.getItem(CART_STORAGE_KEY)) || [];
+    const cartCountElements = document.querySelectorAll('.cart-count');
+    const cartModal = document.getElementById('cartModal');
+    
     // Sample book data (24 books)
-    const books = [
+   const books = [
         {
             id: 1,
             title: "The Silent Patient",
@@ -315,7 +320,6 @@ document.addEventListener('DOMContentLoaded', function() {
             featured: false
         }
     ];
-
     // DOM Elements
     const booksContainer = document.getElementById('booksContainer');
     const categoryLinks = document.querySelectorAll('.category-list a');
@@ -328,7 +332,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const bookModal = document.getElementById('bookModal');
     const closeModal = document.querySelector('.close-modal');
     const pageBtns = document.querySelectorAll('.page-btn');
-    const pageNums = document.querySelectorAll('.page-num');
     const resultsCount = document.getElementById('resultsCount');
 
     // State variables
@@ -336,80 +339,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const booksPerPage = 12;
     let filteredBooks = [...books];
 
+    // ======== 2. MAIN FUNCTIONS ========
+
     // Initialize page
     renderBooks(getPaginatedBooks(filteredBooks));
     setupPagination();
-
-    // ========== EVENT LISTENERS ==========
-
-    // Category filtering
-    categoryLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            categoryLinks.forEach(l => l.classList.remove('active'));
-            this.classList.add('active');
-            currentPage = 1;
-            filterBooks();
-        });
-    });
-
-    // Price range filtering
-    priceRange.addEventListener('input', function() {
-        currentPrice.textContent = this.value === "50" ? "$50+" : `$${this.value}`;
-        currentPage = 1;
-        filterBooks();
-    });
-
-    // Sorting
-    sortBy.addEventListener('change', () => {
-        currentPage = 1;
-        filterBooks();
-    });
-
-    // Search
-    searchBtn.addEventListener('click', () => {
-        currentPage = 1;
-        filterBooks();
-    });
-
-    searchInput.addEventListener('keyup', function(e) {
-        if (e.key === 'Enter') {
-            currentPage = 1;
-            filterBooks();
-        }
-    });
-
-    // View mode toggle
-    viewBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            viewBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            booksContainer.classList.toggle('list-view', this.dataset.view === 'list');
-        });
-    });
-
-    // Modal close handlers
-    closeModal.addEventListener('click', closeModalHandler);
-    window.addEventListener('click', outsideModalClickHandler);
-
-    // Pagination
-    pageBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            if (this.classList.contains('prev')) {
-                if (currentPage > 1) currentPage--;
-            } else {
-                if (currentPage < Math.ceil(filteredBooks.length / booksPerPage)) currentPage++;
-            }
-            renderBooks(getPaginatedBooks(filteredBooks));
-            updatePaginationUI();
-        });
-    });
-
-    // ========== MAIN FUNCTIONS ==========
+    setupEventDelegation();
 
     // Filter books based on current filters
     function filterBooks() {
-        const activeCategory = document.querySelector('.category-list a.active').dataset.category;
+        const activeCategory = document.querySelector('.category-list a.active')?.dataset.category || 'all';
         const maxPrice = parseFloat(priceRange.value);
         const searchTerm = searchInput.value.toLowerCase().trim();
         const sortOption = sortBy.value;
@@ -428,6 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Sort books
         sortBooks(filteredBooks, sortOption);
         
+        currentPage = 1;
         renderBooks(getPaginatedBooks(filteredBooks));
         setupPagination();
     }
@@ -472,52 +412,222 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span>(${book.rating})</span>
                     </div>
                     <p class="price">$${book.price.toFixed(2)}</p>
-                    <button class="add-to-cart">Add to Cart</button>
+                    <button class="add-to-cart" data-id="${book.id}">Add to Cart</button>
                 </div>
             </div>
         `).join('');
-
-        // Add click handlers to book cards
-        document.querySelectorAll('.book-card').forEach(card => {
-            card.addEventListener('click', function(e) {
-                if (!e.target.classList.contains('add-to-cart')) {
-                    const bookId = parseInt(this.dataset.id);
-                    const book = books.find(b => b.id === bookId);
-                    openBookModal(book);
-                }
-            });
-        });
 
         // Update results count
         resultsCount.textContent = filteredBooks.length;
     }
 
-    // Render star ratings
-    function renderRatingStars(rating) {
-        const fullStars = Math.floor(rating);
-        const hasHalfStar = rating % 1 >= 0.5;
-        let stars = '';
-        
-        for (let i = 1; i <= 5; i++) {
-            if (i <= fullStars) {
-                stars += '<i class="fas fa-star"></i>';
-            } else if (i === fullStars + 1 && hasHalfStar) {
-                stars += '<i class="fas fa-star-half-alt"></i>';
-            } else {
-                stars += '<i class="far fa-star"></i>';
+    // Event delegation setup (for dynamic content)
+    function setupEventDelegation() {
+        // Book card and add to cart button handling
+        booksContainer.addEventListener('click', function(e) {
+            const addToCartBtn = e.target.closest('.add-to-cart');
+            const bookCard = e.target.closest('.book-card');
+            
+            if (addToCartBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                const bookId = parseInt(addToCartBtn.dataset.id);
+                const book = books.find(b => b.id === bookId);
+                addToCart(book);
             }
-        }
-        
-        return stars;
+            else if (bookCard) {
+                const bookId = parseInt(bookCard.dataset.id);
+                const book = books.find(b => b.id === bookId);
+                openBookModal(book);
+            }
+        });
+
+        // Category filtering
+        categoryLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                categoryLinks.forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+                filterBooks();
+            });
+        });
+
+        // Price range filtering
+        priceRange.addEventListener('input', function() {
+            currentPrice.textContent = this.value === "50" ? "$50+" : `$${this.value}`;
+            filterBooks();
+        });
+
+        // Sorting
+        sortBy.addEventListener('change', filterBooks);
+
+        // Search
+        searchBtn.addEventListener('click', filterBooks);
+        searchInput.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') filterBooks();
+        });
+
+        // View mode toggle
+        viewBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                viewBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                booksContainer.classList.toggle('list-view', this.dataset.view === 'list');
+            });
+        });
+
+        // Modal close handlers
+        closeModal.addEventListener('click', closeModalHandler);
+        window.addEventListener('click', function(e) {
+            if (e.target === bookModal) closeModalHandler();
+            if (e.target === cartModal) cartModal.style.display = 'none';
+        });
+
+        // Cart icon click
+        document.querySelector('.cart')?.addEventListener('click', function() {
+            renderCartItems();
+            cartModal.style.display = 'block';
+        });
     }
 
-    // Get paginated books for current page
+    // ======== 3. CART FUNCTIONALITY ========
+
+   window.addToCart = function(book) {
+        const existingItem = cartItems.find(item => item.id === book.id);
+        if (existingItem) {
+            existingItem.quantity++;
+        } else {
+            cartItems.push({
+                id: book.id,
+                title: book.title,
+                price: book.price,
+                author: book.author,
+                image: book.image || 'default-book.png',
+                quantity: 1
+            });
+        }
+        updateCartCount();
+        renderCartItems(); // Re-render cart after adding
+        showFeedback('Added to cart!', 'success');
+    };
+
+    function updateCartCount() {
+        const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+        cartCountElements.forEach(el => el.textContent = totalItems);
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
+    }
+
+    function renderCartItems() {
+        const cartContainer = document.querySelector('#cartModal .cart-items');
+        const cartTotalEl = document.getElementById('cartTotal');
+
+        if (!cartContainer || !cartTotalEl) return;
+
+        cartContainer.innerHTML = '';
+
+        if (cartItems.length === 0) {
+            cartContainer.innerHTML = `
+                <div class="empty-cart-message">
+                    <i class="fas fa-shopping-cart"></i>
+                    <h3>Your cart is empty</h3>
+                    <p>Browse our collection to find your next favorite book</p>
+                    <a href="books.html" class="btn">Browse Books</a>
+                </div>
+            `;
+            cartTotalEl.textContent = '0.00';
+            return;
+        }
+
+        let total = 0;
+
+        cartItems.forEach(item => {
+            const itemTotal = item.price * item.quantity;
+            total += itemTotal;
+
+            const cartItem = document.createElement('div');
+            cartItem.classList.add('cart-item');
+            cartItem.innerHTML = `
+                <img src="images/books/${item.image}" alt="${item.title}">
+                <div class="item-details">
+                    <h4>${item.title}</h4>
+                    <p>${item.author}</p>
+                    <p>$${item.price.toFixed(2)}</p>
+                    <div class="quantity-controls">
+                        <button class="decrease" data-id="${item.id}">-</button>
+                        <span class="qty">${item.quantity}</span>
+                        <button class="increase" data-id="${item.id}">+</button>
+                        <button class="remove" data-id="${item.id}"><i class="fas fa-trash"></i></button>
+                    </div>
+                    <p><strong>Subtotal:</strong> $${itemTotal.toFixed(2)}</p>
+                </div>
+            `;
+            cartContainer.appendChild(cartItem);
+        });
+
+        cartTotalEl.textContent = total.toFixed(2);
+
+        // Add event listeners to all cart control buttons
+        addCartItemEventListeners();
+    }
+
+    function addCartItemEventListeners() {
+        const cartContainer = document.querySelector('#cartModal .cart-items');
+        if (!cartContainer) return;
+
+        // Increase quantity
+        cartContainer.querySelectorAll('.increase').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = btn.dataset.id;
+                const item = cartItems.find(i => i.id == id); // Use == for string/number comparison
+                if (item) {
+                    item.quantity++;
+                    updateCartCount();
+                    renderCartItems();
+                }
+            });
+        });
+
+        // Decrease quantity
+        cartContainer.querySelectorAll('.decrease').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = btn.dataset.id;
+                const item = cartItems.find(i => i.id == id);
+                if (item) {
+                    if (item.quantity > 1) {
+                        item.quantity--;
+                    } else {
+                        cartItems = cartItems.filter(i => i.id != id);
+                    }
+                    updateCartCount();
+                    renderCartItems();
+                }
+            });
+        });
+
+        // Remove item
+        cartContainer.querySelectorAll('.remove').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = btn.dataset.id;
+                cartItems = cartItems.filter(i => i.id != id);
+                updateCartCount();
+                renderCartItems();
+                showFeedback('Item removed', 'success');
+            });
+        });
+    }
+
+    // ======== 4. PAGINATION ========
+
     function getPaginatedBooks(booksArray) {
         const startIndex = (currentPage - 1) * booksPerPage;
         return booksArray.slice(startIndex, startIndex + booksPerPage);
     }
 
-    // Set up pagination controls
+    // ======== PAGINATION FUNCTIONS ========
+
     function setupPagination() {
         const pageNumbers = document.querySelector('.page-numbers');
         const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
@@ -581,10 +691,30 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
         
+        // Add event listeners to prev/next buttons
+        document.querySelector('.page-btn.prev').addEventListener('click', goToPrevPage);
+        document.querySelector('.page-btn.next').addEventListener('click', goToNextPage);
+        
         updatePaginationUI();
     }
 
-    // Update pagination UI state
+    function goToPrevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            renderBooks(getPaginatedBooks(filteredBooks));
+            updatePaginationUI();
+        }
+    }
+
+    function goToNextPage() {
+        const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderBooks(getPaginatedBooks(filteredBooks));
+            updatePaginationUI();
+        }
+    }
+
     function updatePaginationUI() {
         const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
         const prevBtn = document.querySelector('.page-btn.prev');
@@ -597,10 +727,15 @@ document.addEventListener('DOMContentLoaded', function() {
         prevBtn.disabled = currentPage === 1;
         nextBtn.disabled = currentPage === totalPages || totalPages === 0;
         
-        document.querySelector('.current-page').textContent = currentPage;
+        // Update current page display if exists
+        const currentPageEl = document.querySelector('.current-page');
+        if (currentPageEl) {
+            currentPageEl.textContent = currentPage;
+        }
     }
 
-    // Open book details modal
+    // ======== 5. MODAL FUNCTIONALITY ========
+
     function openBookModal(book) {
         document.getElementById('modalBookImage').src = `images/books/${book.image}`;
         document.getElementById('modalBookImage').alt = book.title;
@@ -616,20 +751,125 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('modalBookPages').textContent = book.pages;
         document.getElementById('modalBookISBN').textContent = book.isbn;
         
+        // Handle modal add to cart button
+        const modalAddToCart = document.getElementById('modalAddToCart');
+        if (modalAddToCart) {
+            modalAddToCart.onclick = function() {
+                addToCart(book);
+                closeModalHandler();
+            };
+        }
+        
         bookModal.style.display = 'block';
         document.body.style.overflow = 'hidden';
     }
 
-    // Close modal handler
     function closeModalHandler() {
         bookModal.style.display = 'none';
         document.body.style.overflow = 'auto';
     }
 
-    // Close modal when clicking outside
-    function outsideModalClickHandler(e) {
-        if (e.target === bookModal) {
-            closeModalHandler();
+    // ======== 6. UTILITY FUNCTIONS ========
+
+    function renderRatingStars(rating) {
+        const fullStars = Math.floor(rating);
+        const hasHalfStar = rating % 1 >= 0.5;
+        let stars = '';
+        
+        for (let i = 1; i <= 5; i++) {
+            if (i <= fullStars) {
+                stars += '<i class="fas fa-star"></i>';
+            } else if (i === fullStars + 1 && hasHalfStar) {
+                stars += '<i class="fas fa-star-half-alt"></i>';
+            } else {
+                stars += '<i class="far fa-star"></i>';
+            }
         }
+        
+        return stars;
+    }
+
+    function showFeedback(message, type) {
+        const feedback = document.createElement('div');
+        feedback.className = `feedback-message ${type}`;
+        feedback.textContent = message;
+        document.body.appendChild(feedback);
+
+        setTimeout(() => {
+            feedback.style.opacity = '0';
+            setTimeout(() => feedback.remove(), 500);
+        }, 3000);
     }
 });
+
+// ======== 7. DYNAMIC STYLES ========
+const style = document.createElement('style');
+style.textContent = `
+.feedback-message {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 5px;
+    z-index: 1000;
+    transition: opacity 0.5s;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    opacity: 1;
+}
+.feedback-message.success {
+    background-color: #4CAF50;
+    color: white;
+}
+.feedback-message.error {
+    background-color: #f44336;
+    color: white;
+}
+#noResultsMessage {
+    grid-column: 1 / -1;
+    font-size: 1.2rem;
+    margin-top: 20px;
+}
+.quantity-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 5px 0;
+}
+.quantity-controls button {
+    padding: 2px 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    background-color: #eee;
+    border: none;
+    border-radius: 4px;
+}
+.quantity-controls .remove {
+    background-color: #f44336;
+    color: white;
+}
+.quantity-controls .qty {
+    min-width: 20px;
+    text-align: center;
+}
+.cart-item {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 1rem;
+}
+.cart-item img {
+    width: 60px;
+    height: auto;
+    border-radius: 4px;
+}
+.item-details h4 {
+    margin: 0;
+    font-size: 1rem;
+}
+.item-details p {
+    margin: 0.2rem 0;
+    font-size: 0.85rem;
+}
+`;
+document.head.appendChild(style);
